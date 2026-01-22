@@ -1,14 +1,10 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const getAiClient = () => {
-  const apiKey = process.env.API_KEY || "";
-  return new GoogleGenAI({ apiKey });
-};
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getMagicHint = async (chapterTitle: string, userCode: string, task: string) => {
   try {
-    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `You are Merlin, a coding mentor in the game PyMancer. 
@@ -23,7 +19,7 @@ export const getMagicHint = async (chapterTitle: string, userCode: string, task:
         temperature: 0.7,
       }
     });
-    return response.text || "The stars are unclear... try checking your syntax again.";
+    return response.text;
   } catch (error) {
     console.error("AI Hint Error:", error);
     return "The mana in the air is thin... try checking your syntax, young mage.";
