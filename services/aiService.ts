@@ -1,10 +1,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const getMagicHint = async (chapterTitle: string, userCode: string, task: string) => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `You are Merlin, a coding mentor in the game PyMancer. 
