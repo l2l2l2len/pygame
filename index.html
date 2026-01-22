@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,10 +7,12 @@
     <meta name="description" content="A professional, open-access platform to learn Python logic via an interactive story-driven RPG. No accounts, just code.">
     
     <script>
-      // Global shim for process.env to prevent ReferenceErrors in the browser
+      // Global shim for process to prevent ReferenceErrors in the browser
+      // Vite's 'define' will handle process.env.API_KEY replacement at build time
       window.process = { 
         env: { API_KEY: "" },
-        platform: 'browser'
+        platform: 'browser',
+        nextTick: (cb) => setTimeout(cb, 0)
       };
     </script>
 
@@ -126,6 +127,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
