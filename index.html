@@ -8,7 +8,7 @@
     <meta name="description" content="A professional, open-access platform to learn Python logic via an interactive story-driven RPG. No accounts, just code.">
     
     <script>
-      // Global shim for process.env to prevent ReferenceErrors
+      // Global shim for process.env to prevent ReferenceErrors in the browser
       window.process = { 
         env: { API_KEY: "" },
         platform: 'browser'
@@ -117,9 +117,9 @@
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
