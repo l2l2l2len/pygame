@@ -1,5 +1,9 @@
 {
-  "name": "PyMancer: The Code Chronicles",
-  "description": "An epic story-based RPG for learning Python. Level up your coding skills from beginner to master as you cast spells and solve puzzles in the magical realm of Pythonia.",
+  "name": "PyMancer | Learn Python through Adventure",
+  "short_name": "PyMancer",
+  "description": "Master the art of Python programming through an interactive RPG adventure. Solve real coding puzzles, unlock magical spells, and save the realm of Pythonia.",
+  "theme_color": "#1a73e8",
+  "background_color": "#f8f9fa",
+  "display": "standalone",
   "requestFramePermissions": []
 }

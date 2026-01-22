@@ -1,6 +1,10 @@
 
 import { ExecutionResult } from '../types';
 
+/**
+ * A safe, restricted Python-like interpreter for educational purposes.
+ * This handles basic assignments, list methods, print statements, and simple control flow.
+ */
 export const executePythonMock = (code: string): ExecutionResult => {
   let output = '';
   const lines = code.split('\n');
@@ -13,37 +17,11 @@ export const executePythonMock = (code: string): ExecutionResult => {
       
       if (!trimmed || trimmed.startsWith('#')) continue;
 
-      // Detect common syntax errors or unresolved placeholders
       if (trimmed.includes('???')) {
-        throw new Error(`Placeholder detected on line ${i + 1}. All magical voids must be filled.`);
+        throw new Error(`SyntaxError: Unresolved placeholder on line ${i + 1}. All voids must be filled.`);
       }
 
-      // Handle list method .append()
-      const listAppendMatch = trimmed.match(/^([a-zA-Z_]\w*)\.append\((.*)\)$/);
-      if (listAppendMatch) {
-        const listName = listAppendMatch[1];
-        const valExpr = listAppendMatch[2];
-        if (scope[listName] === undefined) {
-           throw new Error(`NameError: name '${listName}' is not defined.`);
-        }
-        if (Array.isArray(scope[listName])) {
-          scope[listName].push(simpleEval(valExpr, scope));
-        } else {
-          throw new Error(`AttributeError: '${typeof scope[listName]}' object has no attribute 'append'`);
-        }
-        continue;
-      }
-
-      // Handle print()
-      const printMatch = trimmed.match(/^print\((.*)\)$/);
-      if (printMatch) {
-        const expression = printMatch[1].trim();
-        const result = simpleEval(expression, scope);
-        output += (typeof result === 'object' ? JSON.stringify(result) : result) + '\n';
-        continue;
-      }
-
-      // Handle variable assignment
+      // 1. Variable Assignment (e.g., x = 5, y = "hello")
       const assignMatch = trimmed.match(/^([a-zA-Z_]\w*)\s*=\s*(.*)$/);
       if (assignMatch) {
         const varName = assignMatch[1];
@@ -52,36 +30,73 @@ export const executePythonMock = (code: string): ExecutionResult => {
         continue;
       }
 
-      // Handle simple if block
-      if (trimmed.startsWith('if ')) {
-        const conditionMatch = trimmed.match(/if\s+(.*):/);
-        if (!conditionMatch) throw new Error(`SyntaxError: invalid syntax in 'if' statement on line ${i+1}`);
-        const condition = conditionMatch[1];
-        if (evaluateCondition(condition, scope)) {
-            const nextLine = lines[i + 1];
-            if (nextLine && nextLine.includes('print')) {
-              const msgMatch = nextLine.match(/print\(['"](.*)['"]\)/);
-              if (msgMatch) output += msgMatch[1] + '\n';
-            }
+      // 2. List Methods (e.g., list.append('item'))
+      const listMethodMatch = trimmed.match(/^([a-zA-Z_]\w*)\.([a-zA-Z_]\w*)\((.*)\)$/);
+      if (listMethodMatch) {
+        const listName = listMethodMatch[1];
+        const methodName = listMethodMatch[2];
+        const argExpr = listMethodMatch[3];
+        
+        if (scope[listName] === undefined) throw new Error(`NameError: name '${listName}' is not defined.`);
+        if (!Array.isArray(scope[listName])) throw new Error(`AttributeError: '${typeof scope[listName]}' object has no attribute '${methodName}'`);
+        
+        if (methodName === 'append') {
+            scope[listName].push(simpleEval(argExpr, scope));
+        } else {
+            throw new Error(`AttributeError: List has no method '${methodName}' in this simulator.`);
         }
-        i++; // Skip inner block line in this simple simulator
         continue;
       }
 
-      // Handle for loop simulation
-      if (trimmed.startsWith('for ') && trimmed.includes('in heads:')) {
-          const heads = scope['heads'];
-          if (!heads || !Array.isArray(heads)) throw new Error(`NameError: name 'heads' is not defined or is not a list.`);
+      // 3. Print Function
+      const printMatch = trimmed.match(/^print\((.*)\)$/);
+      if (printMatch) {
+        const expression = printMatch[1].trim();
+        const result = simpleEval(expression, scope);
+        output += (result === undefined ? 'None' : String(result)) + '\n';
+        continue;
+      }
+
+      // 4. Simple 'if' statement (single line block support)
+      if (trimmed.startsWith('if ')) {
+        const conditionMatch = trimmed.match(/if\s+(.*):/);
+        if (!conditionMatch) throw new Error(`SyntaxError: Invalid 'if' syntax on line ${i+1}`);
+        const condition = conditionMatch[1];
+        
+        if (evaluateCondition(condition, scope)) {
+            // Check next line for an indented block
+            const nextLine = lines[i + 1];
+            if (nextLine && (nextLine.startsWith('    ') || nextLine.startsWith('\t'))) {
+               // Executing the indented line
+               const innerResult = executePythonMock(nextLine.trim());
+               if (innerResult.success) output += innerResult.output + (innerResult.output ? '\n' : '');
+               else throw new Error(innerResult.error);
+            }
+        }
+        i++; // Skip the block line
+        continue;
+      }
+
+      // 5. Simple 'for' loop (heads example)
+      if (trimmed.startsWith('for ')) {
+          const forMatch = trimmed.match(/for\s+([a-zA-Z_]\w*)\s+in\s+([a-zA-Z_]\w*):/);
+          if (!forMatch) throw new Error(`SyntaxError: Invalid 'for' syntax on line ${i+1}`);
+          const iteratorVar = forMatch[1];
+          const listVar = forMatch[2];
+          
+          const list = scope[listVar];
+          if (!Array.isArray(list)) throw new Error(`TypeError: '${typeof list}' object is not iterable`);
+          
           const nextLine = lines[i + 1];
-          if (nextLine && nextLine.includes('print')) {
-              const msgMatch = nextLine.match(/print\(['"](.*)['"]\)/);
-              if (msgMatch) {
-                  heads.forEach(() => {
-                      output += msgMatch[1] + '\n';
-                  });
-              }
+          if (nextLine && (nextLine.startsWith('    ') || nextLine.startsWith('\t'))) {
+              list.forEach(item => {
+                  scope[iteratorVar] = item;
+                  const innerResult = executePythonMock(nextLine.trim());
+                  if (innerResult.success) output += innerResult.output + (innerResult.output ? '\n' : '');
+                  else throw new Error(innerResult.error);
+              });
           }
-          i++; 
+          i++;
           continue;
       }
     }
@@ -94,18 +109,20 @@ export const executePythonMock = (code: string): ExecutionResult => {
 
 const evaluateCondition = (condition: string, scope: Record<string, any>): boolean => {
   condition = condition.trim();
-  if (scope[condition] !== undefined) return !!scope[condition];
   
-  if (condition.includes('and')) {
-      const parts = condition.split('and');
+  // Logical 'and'
+  if (condition.includes(' and ')) {
+      const parts = condition.split(' and ');
       return evaluateCondition(parts[0], scope) && evaluateCondition(parts[1], scope);
   }
 
-  if (condition.includes('==')) {
-    const [left, right] = condition.split('==').map(s => s.trim());
+  // Equality
+  if (condition.includes(' == ')) {
+    const [left, right] = condition.split(' == ').map(s => s.trim());
     return simpleEval(left, scope) === simpleEval(right, scope);
   }
 
+  // Membership
   if (condition.includes(' in ')) {
       const [val, list] = condition.split(' in ').map(s => s.trim());
       const v = simpleEval(val, scope);
@@ -113,7 +130,7 @@ const evaluateCondition = (condition: string, scope: Record<string, any>): boole
       return Array.isArray(l) && l.includes(v);
   }
 
-  return false;
+  return !!simpleEval(condition, scope);
 };
 
 const simpleEval = (expr: string, scope: Record<string, any>): any => {
@@ -122,17 +139,24 @@ const simpleEval = (expr: string, scope: Record<string, any>): any => {
     if (expr === 'True') return true;
     if (expr === 'False') return false;
     if (!isNaN(Number(expr))) return Number(expr);
+    
+    // Strings
     if ((expr.startsWith("'") && expr.endsWith("'")) || (expr.startsWith('"') && expr.endsWith('"'))) {
         return expr.slice(1, -1);
     }
+    
+    // Lists
     if (expr.startsWith('[') && expr.endsWith(']')) {
         return expr.slice(1, -1).split(',').map(s => simpleEval(s.trim(), scope));
     }
+    
+    // Built-in functions
     if (expr.startsWith('len(') && expr.endsWith(')')) {
         const inner = expr.slice(4, -1);
         const list = scope[inner];
         if (Array.isArray(list)) return list.length;
         throw new Error(`TypeError: object of type '${typeof list}' has no len()`);
     }
+    
     return expr;
 };
