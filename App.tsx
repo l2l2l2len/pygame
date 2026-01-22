@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlayerState, Chapter, ExecutionResult, Page } from './types.ts';
-import { CHAPTERS, INITIAL_PLAYER_STATE, STORAGE_KEY, STATIC_CONTENT } from './constants.ts';
-import { executePythonMock } from './services/pythonInterpreter.ts';
-import { getMagicHint } from './services/aiService.ts';
+import { PlayerState, ExecutionResult, Page } from './types';
+import { CHAPTERS, INITIAL_PLAYER_STATE, STORAGE_KEY, STATIC_CONTENT } from './constants';
+import { executePythonMock } from './services/pythonInterpreter';
+import { getMagicHint } from './services/aiService';
 
 const App: React.FC = () => {
   // State initialization with Persistence
